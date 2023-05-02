@@ -181,6 +181,11 @@ float xdiff = 0.0;
 float ydiff = 0.0;
 float zdiff = 0.0; 
 
+int changeCO;
+int changeX;
+int changeY;
+int changeZ;
+
 bool firstRun = false;
 void setup() {
     pinMode(4, OUTPUT);
@@ -338,16 +343,9 @@ void loop() {
             mpu.dmpGetQuaternion(&q, fifoBuffer);
             mpu.dmpGetGravity(&gravity, &q);
             mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
-            //Serial.print("ypr\t");
             x = (ypr[0] * 180/M_PI);
-            //Serial.println(x);
-            //Serial.print(" ");
-            //Serial.print("\t");
             y = (ypr[1] * 180/M_PI);
-            //Serial.print(ypr[1] * 180/M_PI);
-            //Serial.print("\t");
             z = (ypr[2] * 180/M_PI);
-            //Serial.println(ypr[2] * 180/M_PI);
             if (packetSize) {
                 // received a packet
               //Serial.print("Sending packet: ");
@@ -359,6 +357,11 @@ void loop() {
               Serial.println(x);
               Serial.println(y);
               Serial.println(z);
+              Serial.println("Changes: ---- ");
+              Serial.println(changeCO);
+              Serial.println(changeX);
+              Serial.println(changeY);
+              Serial.println(changeZ);
 
               // send packet
               LoRa.beginPacket();
@@ -372,24 +375,30 @@ void loop() {
               //LoRa.print(sensorValueR);
               //LoRa.print(", ");
               LoRa.print(sensorValue2);
+              LoRa.print(", ");
+              LoRa.print(changeCO);
+              LoRa.print(", ");
+              LoRa.print(changeX);
+              LoRa.print(", ");
+              LoRa.print(changeY);
+              LoRa.print(", ");
+              LoRa.print(changeZ);
+              LoRa.print(", ");
               LoRa.print(">");
               LoRa.endPacket();
-              /*digitalWrite(3, HIGH);
-              digitalWrite(4, HIGH);   
-              digitalWrite(5, HIGH);   
-              delay (400);
-              digitalWrite(3, LOW);
-              digitalWrite(4, LOW);   
-              digitalWrite(5, LOW); */
-              delay(1000);
+              delay(10000);
             }
+        changeCO = 0;
+        changeX = 0;
+        changeY = 0;
+        changeZ = 0;
         xdiff = (xprev-x);
         ydiff = (yprev-y);
         zdiff = (yprev-y);
         
         #endif
         if (((sensorValue2 > 200) || (abs(xdiff) > 30) ||(abs(ydiff) > 30) || (abs(zdiff) >30)) && firstRun)  {
-            for (int i=0; i<3; i++) {
+            for (int i=0; i<3; i++) { 
               digitalWrite(3, HIGH);
               digitalWrite(4, HIGH);   
               digitalWrite(5, HIGH); 
@@ -400,6 +409,20 @@ void loop() {
               delay(200); 
             }
           }
+
+        if (sensorValue2 > 200 && firstRun) {
+         changeCO = 1;
+        }
+        if ((abs(xdiff) > 30) && firstRun) {
+          changeX = 1;
+        }
+        if ((abs(ydiff) > 30) && firstRun) {
+          changeY = 1;
+        }
+        if ((abs(zdiff) > 30) && firstRun) {
+          changeZ = 1;
+        }
+        
         // blink LED to indicate activity
         blinkState = !blinkState;
         digitalWrite(LED_PIN, blinkState);
@@ -407,12 +430,6 @@ void loop() {
         yprev = y;
         zprev = z;
         firstRun = true;
-        /* 
-        Serial.println("----prev");
-        Serial.println(xdiff);
-        Serial.println(ydiff);
-        Serial.println(zdiff);
-        */
         
     }
 }
